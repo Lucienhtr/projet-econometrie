@@ -10,6 +10,8 @@ library(sandwich)
 library(broom)
 library(ggplot2)
 library(modelsummary)
+library(car)
+
 
 
 #traitement des données#
@@ -63,26 +65,34 @@ df <- df_dep %>%
 
 head(df)
 
+
+#régression#
 model_ols <- lm(
-  dep_rate ~ revenu_pps + temp_rate + part_time_rate + unemp,
+  dep_rate ~ log(revenu_pps) + temp_rate + part_time_rate + unemp,
   data = df
 )
 
 results_table <- tidy(model_ols) %>%
   mutate(
-    Term = c("Intercept", "Income (PPS)", "Temporary Rate", "Part-Time Rate", "Unemployment"),
+    Term = case_when(
+      term == "(Intercept)" ~ "Intercept",
+      term == "log(revenu_pps)" ~ "Log Income (PPS)",
+      term == "temp_rate" ~ "Temporary Rate",
+      term == "part_time_rate" ~ "Part-Time Rate",
+      term == "unemp" ~ "Unemployment",
+      TRUE ~ term
+    ),
     Coefficient = round(estimate, 6),
     Std.Error = round(std.error, 6),
     t.statistic = round(statistic, 4),
     p.value = round(p.value, 6)
   ) %>%
   select(Term, Coefficient, Std.Error, t.statistic, p.value)
-
 print(results_table, n = Inf)
 
 stargazer(model_ols, type = "text", single.row = TRUE, digits = 4)
 
-
+fit_stats <- summary(model_ols)
 
 
 # Breusch-Pagan test
@@ -91,7 +101,6 @@ bp_test <- bptest(model_ols)
 
 #test de wald#
 
-library(car)
 
 wald_test <- linearHypothesis(
   model_ols,
@@ -101,13 +110,13 @@ wald_test <- linearHypothesis(
 )
 
 #test endo#
-df <- df %>%
+df_iv_prep <- df %>%
   arrange(geo, year) %>%
   group_by(geo) %>%
   mutate(unemp_lag = lag(unemp)) %>%
   ungroup()
 
-df_iv <- na.omit(df)
+df_iv <- na.omit(df_iv_prep)
 
 model_iv <- ivreg(
   dep_rate ~ revenu_pps + temp_rate + part_time_rate + unemp |
@@ -126,6 +135,9 @@ wu_pval <- iv_sum$diagnostics["Wu-Hausman", "p-value"]
 summary(model_iv, diagnostics = TRUE)
 
 
+#résumé du modèle#
+fit_stats <- summary(model_ols)
+
 model_summary <- data.frame(
   Statistic = c(
     "F-statistic",
@@ -143,11 +155,11 @@ model_summary <- data.frame(
     "Wu-Hausman p-value"
   ),
   Value = c(
-    round(fit_stats$statistic, 4),
-    round(fit_stats$p.value, 6),
+    round(fit_stats$fstatistic[1], 4),
+    round(pf(fit_stats$fstatistic[1], fit_stats$fstatistic[2], fit_stats$fstatistic[3], lower.tail = FALSE), 6),
     round(fit_stats$r.squared, 6),
     round(fit_stats$adj.r.squared, 6),
-    fit_stats$nobs,
+    nobs(model_ols),
     round(bp_test$statistic, 4),
     round(bp_test$p.value, 6),
     round(wald_test$F[2], 4),
@@ -159,7 +171,10 @@ model_summary <- data.frame(
   )
 )
 
+model_summary 
 
+
+#doc html#
 html_content <- paste0(
   "<!DOCTYPE html>
 <html>
@@ -223,7 +238,7 @@ plot(model_ols, which = 1)
 plot(model_ols, which = 2)
 
 # Income vs Deprivation
-ggplot(df, aes(x = revenu_pps, y = dep_rate)) +
+ggplot(df, aes(x = log(revenu_pps), y = dep_rate)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   labs(
@@ -231,5 +246,4 @@ ggplot(df, aes(x = revenu_pps, y = dep_rate)) +
     x = "Income (PPS)",
     y = "Severe Material Deprivation"
   )
-
-
+  
