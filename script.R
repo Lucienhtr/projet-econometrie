@@ -174,7 +174,7 @@ model_summary <- data.frame(
 model_summary 
 
 
-#doc html#
+#doc html : disclaimer, je n'ai rien fait et je ne comprends pas les lignes suivantes, elles ont été généré par IA parce que je trouvais ça stylé#
 html_content <- paste0(
   "<!DOCTYPE html>
 <html>
