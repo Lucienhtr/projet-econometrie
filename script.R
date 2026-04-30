@@ -15,11 +15,11 @@ library(car)
 
 
 #traitement des données#
-unemployment_rate <- read_csv("c:\\Users\\hitie\\Downloads\\unemployment_rate.csv")
-temporary_employees <- read_csv("c:\\Users\\hitie\\Downloads\\temporary_employees.csv")
-severe_material_deprivation <- read_csv("c:\\Users\\hitie\\Downloads\\severe_material_deprivation.csv")
-part_time_employment_rate <- read_csv("c:\\Users\\hitie\\Downloads\\part_time_employment_rate.csv")
-mean_and_medium_income <- read_csv("c:\\Users\\hitie\\Downloads\\mean_and_medium_income.csv")
+unemployment_rate <- read_csv("data/unemployment_rate.csv")
+temporary_employees <- read_csv("data/temporary_employees.csv")
+severe_material_deprivation <- read_csv("data/severe_material_deprivation.csv")
+part_time_employment_rate <- read_csv("part_time_employment_rate.csv")
+mean_and_medium_income <- read_csv("data/mean_and_medium_income.csv")
 
 target_countries <- c(
   "BE", "BG", "CZ", "DK", "DE", "EE", "IE", "EL", "ES", "FR",
